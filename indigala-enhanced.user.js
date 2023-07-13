@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Indiegala Enhanced
 // @namespace    https://sergiosusa.com
-// @version      0.1
+// @version      0.2
 // @description  This script enhanced the famous marketplace Indigala.
 // @author       Sergio Susa (sergio@sergiosusa.com)
 // @match        https://www.indiegala.com/gift-bundle/*
@@ -11,7 +11,6 @@
 (function () {
     'use strict';
     try {
-
         let indiegala = new Indiegala();
         indiegala.render();
     } catch (exception) {
@@ -52,39 +51,56 @@ function BundleRevealer() {
 
     this.render = () => {
 
-        let buttonsContainer = document.querySelector(".profile-private-page-library-menu ul");
+        let navigationContainer = document.querySelector("section.profile-private-page-library-cont");
+        let revealSection = document.createElement("div");
+        revealSection.style="margin: 0px 10px 15px 10px;display: flex;justify-content:center;"
 
-        let extraButtons = '<li id="reveal-copy" style="margin-left: 50px;" class="active bg-gradient-red"><div class="profile-private-page-library-menu-item-inner"><a href="javascript:void(0)">( Reveal and Copy )</a></div></li>'
-        + '<li id="copy" style="margin-left: 50px;" class="active bg-gradient-red"><div class="profile-private-page-library-menu-item-inner"><a href="javascript:void(0)">( Copy )</a></div></li>'
-        + '<li id="copy-excel" style="margin-left: 50px;" class="active bg-gradient-red"><div class="profile-private-page-library-menu-item-inner"><a href="javascript:void(0)">( Copy To Excel )</a></div></li>';
-
-        buttonsContainer.innerHTML = buttonsContainer.innerHTML + extraButtons;
-
-        document.querySelector("#reveal-copy").onclick = this.revealAndCopy;        
-        document.querySelector("#copy").onclick = this.copy;        
-        document.querySelector("#copy-excel").onclick = this.copyToExcel;        
+        revealSection.innerHTML='<div style="display:flex;justify-content:space-evenly;width: 280px;">' +
+        '<div><button id="revealBtn" style="text-align: center;line-height: 26px;color: #000000;border: 1px solid #939393;border-radius: 28px;width: 85px;">Reveal</button></div>' +
+        '<div><span style="margin-right: 5px;vertical-align: -webkit-baseline-middle"> and copy to </span>' +
+        '<input style="vertical-align: -webkit-baseline-middle;" type="radio" id="copy1" name="copy" value="list" />' +
+        '<label style="margin-left: 5px;vertical-align: -webkit-baseline-middle;" for="copy1">list</label>' +
+        '<input style="margin-left: 5px;vertical-align: -webkit-baseline-middle;" type="radio" id="copy2" name="copy" value="excel" />' +
+        '<label style="margin-left: 5px;vertical-align: -webkit-baseline-middle;" for="copy2">excel</label></div>' +
+        '</div>';
+        
+        navigationContainer.parentElement.insertBefore(revealSection, navigationContainer);
+        document.querySelector("#revealBtn").onclick = this.revealAndSomething;
     }
+
+    this.revealAndSomething = () => {
+        let optionSelected = document.querySelector("input[name='copy']:checked");
+
+        if (null === optionSelected){
+            this.reveal().then(this.revealSuccess);
+
+        } else if ("list" === optionSelected.value){
+            this.revealAndCopy();
+        } else if ("excel" === optionSelected.value){
+            this.revealAndCopyToExcel();
+        }
+    };
 
     this.revealAndCopy = () => {
         this.reveal().then(this.copy);
     };
 
+    this.revealAndCopyToExcel = () => {
+        this.reveal().then(this.copyToExcel);
+    };
+
     this.reveal = () => {
         return new Promise((resolve) => {
-
-            let revealButtons = document.querySelectorAll(".profile-private-page-library-serial-dialog .profile-private-page-library-get-serial-btn");
-            let x = 0;
-
+            document.querySelector("section.profile-private-page-library-cont").style.opacity = "0.2";
             let revealIntervalId = setInterval(() => {
-
-                if (x === revealButtons.length) {
+                let revealButtonsPendding = document.querySelectorAll(".profile-private-page-library-serial-dialog .profile-private-page-library-get-serial-btn");
+                if (revealButtonsPendding.length === 0) {
                     clearInterval(revealIntervalId);
                     resolve();
+                    document.querySelector("section.profile-private-page-library-cont").style.opacity = "1";
                     return;
                 }
-                revealButtons[x].click();
-                x++;
-
+                revealButtonsPendding[0].click();
             }, 4000);
         });
     }
@@ -113,6 +129,11 @@ function BundleRevealer() {
         GM_setClipboard(list.join('\n'));
         alert("Seriales copiados al portapapeles");
     }
+
+    this.revealSuccess = () => {
+        alert("Seriales revelados");
+    }
+
 }
 
 BundleRevealer.prototype = Object.create(Renderer.prototype);
